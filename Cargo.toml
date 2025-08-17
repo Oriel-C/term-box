@@ -1,0 +1,12 @@
+[package]
+name = "term-box"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+test = true
+doctest = true
+crate-type = ["lib"]
+
+[dependencies]
+nu-ansi-term = "0.50.1"
