@@ -5,10 +5,12 @@ use utils::*;
 
 #[test]
 fn empty() {
-    let box_single = TermBox::default().to_string();
-    let box_double = TermBox { border_style: BorderStyle::new_double(), ..TermBox::default() }.to_string();
-    assert_eq!(box_single, "┌─┐\n└─┘");
-    assert_eq!(box_double, "╔═╗\n╚═╝");
+    let box_single = TermBox::default().into_string();
+    let box_double = TermBox { border_style: BorderStyle::new_double(), ..TermBox::default() }.into_string();
+    let box_line = TermBox::default().append_with("").into_string();
+    assert_eq!(box_single, "┌─┐\n└─┘", "single");
+    assert_eq!(box_double, "╔═╗\n╚═╝", "double");
+    assert_eq!(box_line, "┌─┐\n│ │\n└─┘", "single w/ empty line");
 }
 
 #[test]
@@ -16,7 +18,7 @@ fn empty_styled() {
     let box_ = TermBox {
         border_style: BorderStyle::new_double().with_style(Color::Purple),
         ..TermBox::default()
-    }.to_string();
+    }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "empty-styled");
@@ -34,7 +36,7 @@ fn unstyled() {
             "lines",
             "for testing"
         ]
-    }.to_string();
+    }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_eq!(box_, "┌───────────┐\n│a          │\n│few        │\n│lines      │\n│for testing│\n└───────────┘");
@@ -51,7 +53,7 @@ fn unstyled_with_ansi_text() {
             AnsiStyle::new().bold().paint("bolded"),
             Color::Blue.bold().paint("both")
         ]
-    }.to_string();
+    }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "unstyled-with-ansi-text");
@@ -67,7 +69,7 @@ fn styled() {
             "cool",
             "text"
         ]
-    }.to_string();
+    }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "styled");
@@ -84,7 +86,7 @@ fn styled_with_ansi_text() {
             AnsiStyle::new().bold().paint("bolded"),
             Color::Blue.bold().paint("both")
         ]
-    }.to_string();
+    }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "styled-with-ansi-text");
@@ -99,7 +101,7 @@ fn padded() {
             "padded",
             "text"
         ]
-    }.to_string();
+    }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "padded")
@@ -116,7 +118,7 @@ fn padded_with_ansi_text() {
             AnsiStrings(&[ Color::Red.paint("pa"), Color::Default.paint("dd"), Color::Purple.paint("ed") ]),
             Color::Blue.paint("text")
         ]
-    }.to_string();
+    }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "padded-with-ansi-text")

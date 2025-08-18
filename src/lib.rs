@@ -76,9 +76,18 @@ impl TermBox {
     const SIDES: usize = 2;
     const MIN_LINE_LEN: usize = 3;
 
+    pub fn append(&mut self, line: impl ToString) {
+        self.lines.push(line.to_string());
+    }
+
+    pub fn append_with(mut self, line: impl ToString) -> Self {
+        self.append(line);
+        self
+    }
+
     /// Writes the box's text to the given [fmt::Write] implementor.
-    pub fn write_to<T: fmt::Write>(&self, write: &mut T) -> fmt::Result {
-        write!(write, "{}", self.to_string())
+    pub fn write_to<T: fmt::Write>(self, write: &mut T) -> fmt::Result {
+        write!(write, "{}", self.into_string())
     }
 
     /// Writes the box's text to the file or other [io::Write] implementor.
@@ -91,17 +100,17 @@ impl TermBox {
     /// let box_ = TermBox::default();
     /// box_.print_to(&mut std::io::stderr()).expect("Printing box")
     /// ```
-    pub fn print_to<T: io::Write>(&self, write: &mut T) -> io::Result<()> {
-        write!(write, "{}", self.to_string())
+    pub fn print_to<T: io::Write>(self, write: &mut T) -> io::Result<()> {
+        write!(write, "{}", self.into_string())
     }
 
     /// Prints the box to [stdout](io::stdout).
-    pub fn print(&self) {
+    pub fn print(self) {
         let _ = self.print_to(&mut io::stdout());
     }
 
     /// Converts the box to a [String].
-    pub fn to_string(&self) -> String {
+    pub fn into_string(self) -> String {
         let lines = self.lines.iter().map(CountedString::new).collect::<Vec<_>>();
         let longest_line = lines
             .iter()
