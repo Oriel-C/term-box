@@ -1,6 +1,6 @@
 pub use nu_ansi_term::{Color, Style as AnsiStyle};
 use ansi_width::ansi_width;
-use std::cmp;
+use std::{cmp, io, fmt};
 
 #[repr(usize)]
 #[derive(Debug)]
@@ -49,6 +49,35 @@ impl BorderStyle {
     }
 }
 
+#[derive(PartialEq, Eq)]
+struct CountedString<'a> {
+    str: &'a str,
+    width: usize
+}
+
+impl cmp::PartialOrd for CountedString<'_> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl cmp::Ord for CountedString<'_> {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.width.cmp(&other.width)
+    }
+}
+
+impl<'a> CountedString<'a> {
+    fn new(string: &'a impl AsRef<str>) -> Self {
+        let str = string.as_ref();
+        CountedString { str, width: ansi_width(str) }
+    }
+}
+
+impl CountedString<'static> {
+    const EMPTY: Self = CountedString { str: "", width: 0 };
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Box {
     border_style: BorderStyle,
@@ -59,19 +88,27 @@ impl Box {
     const MIN_LINE_LEN: usize = (BorderChar::LEN_BYTES * 2) + 1; // 2 border chars, '\n'
     const MIN_EDGE_LEN: usize = (BorderChar::LEN_BYTES * 3) + 1; // 3 border chars (corners and edge) + '\n'
 
+    pub fn write_to<T: fmt::Write>(&self, write: &mut T) -> fmt::Result {
+        write!(write, "{}", self.to_string())
+    }
+
+    pub fn print_to<T: io::Write>(&self, write: &mut T) -> io::Result<()> {
+        write!(write, "{}", self.to_string())
+    }
+
     pub fn print(&self) {
-        print!("{}", self.to_string())
+        let _ = self.print_to(&mut io::stdout());
     }
 
     pub fn to_string(&self) -> String {
-        let empty = String::from("");
-        let longest_line = self.lines
+        let lines = self.lines.iter().map(CountedString::new).collect::<Vec<_>>();
+        let longest_line = lines
             .iter()
-            .max_by(|a, b| ansi_width(a).cmp(&ansi_width(b)))
-            .unwrap_or(&empty);
+            .max()
+            .unwrap_or(&CountedString::EMPTY);
 
-        let line_len = cmp::max(3, longest_line.chars().count() + 2); // +3: '|', '|', skip '\n'
-        let line_len_bytes = cmp::max(Self::MIN_EDGE_LEN, longest_line.len() + Self::MIN_LINE_LEN);
+        let line_len = cmp::max(3, longest_line.width + 2); // +3: '|', '|', skip '\n'
+        let line_len_bytes = cmp::max(Self::MIN_EDGE_LEN, longest_line.width + Self::MIN_LINE_LEN);
 
         // TODO estimate capacity needed for ANSI control sequences
         let mut buf = String::with_capacity((self.lines.len() + 2) * line_len_bytes);
@@ -79,7 +116,7 @@ impl Box {
         make_top_line(&mut buf, self.border_style, line_len);
 
         let edge_string = self.border_style.get_edge_string();
-        for line in self.lines.iter() {
+        for line in lines.iter() {
             make_line(&mut buf, &edge_string, line, line_len_bytes)
         }
 
@@ -89,11 +126,11 @@ impl Box {
     }
 }
 
-fn make_line(buf: &mut String, edge_string: &str, text: &str, min_len_bytes: usize) {
+fn make_line(buf: &mut String, edge_string: &str, text: &CountedString, min_len: usize) {
     buf.push_str(edge_string);
-    buf.push_str(text);
+    buf.push_str(text.str);
     
-    let diff = min_len_bytes - (text.len() + (2 * BorderChar::LEN_BYTES) + 1);
+    let diff = min_len - (text.width + (2 * BorderChar::LEN_BYTES) + 1);
     if diff > 0 {
         buf.push_str(&str::repeat(" ", diff))
     }
@@ -127,11 +164,21 @@ fn make_top_or_bottom_line(buf: &mut String, style: BorderStyle, len: usize, lef
 mod tests {
     use super::*;
     use derive_new::new;
+    use std::fs;
 
     macro_rules! strings {
-        ($($strs:literal),*) => {
-            vec![ $(String::from($strs)),* ]
+        ($($strs:expr),*) => {
+            vec![ $($strs.to_string()),* ]
         }
+    }
+
+    macro_rules! assert_okay {
+        ($expr:expr $(, $name:literal)?) => {
+            match $expr {
+                Ok(val) => val,
+                Err(err) => panic!(concat!("Assertion ", $("'", $name, "' ",)? "failed: {:?}"), err)
+            }
+        };
     }
 
     #[derive(Debug, new)]
@@ -139,7 +186,7 @@ mod tests {
     struct LineLenErr {
         expected: usize,
         found: usize,
-        at_index: usize
+        at: usize
     }
 
     fn lines_same_len(string: &str) -> Result<usize, LineLenErr> {
@@ -147,7 +194,7 @@ mod tests {
             .into_iter()
             .enumerate()
             .try_fold(0, |len, (idx, next)| {
-                let next_len = next.chars().count();
+                let next_len = ansi_width(next);
                 match len {
                     0 => Ok(next_len),
                     _ => if len == next_len { Ok(len) } else { Err(LineLenErr::new(len, next_len, idx)) }
@@ -173,8 +220,24 @@ mod tests {
             ]
         }.to_string();
 
-        let assertion = lines_same_len(&box_);
-        assert!(assertion.is_ok(), "{assertion:?}");
+        assert_okay!(lines_same_len(&box_));
         assert_eq!(box_, "┌───────────┐\n│a          │\n│few        │\n│lines      │\n│for testing│\n└───────────┘");
+    }
+
+    #[test]
+    fn unstyled_with_ansi_text() {
+        let box_ = Box {
+            border_style: BorderStyle::default(),
+            lines: strings![
+                "uncolored",
+                Color::Red.paint("colored!!"),
+                AnsiStyle::new().bold().paint("bolded"),
+                Color::Blue.bold().paint("both")
+            ]
+        }.to_string();
+
+        assert_okay!(lines_same_len(&box_));
+        let input = assert_okay!(fs::read_to_string("test-input/unstyled-with-ansi-text.txt"), "input exists");
+        assert_eq!(box_, input);
     }
 }
