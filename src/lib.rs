@@ -36,27 +36,40 @@ impl CountedString<'static> {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct Box {
+pub struct TermBox {
     pub border_style: BorderStyle,
     pub lines: Vec<String>
 }
 
-impl Box {
+impl TermBox {
     const MIN_LINE_LEN: usize = (BorderChar::LEN_BYTES * 2) + 1; // 2 border chars, '\n'
     const MIN_EDGE_LEN: usize = (BorderChar::LEN_BYTES * 3) + 1; // 3 border chars (corners and edge) + '\n'
 
+    /// Writes the box's text to the given [fmt::Write] implementor.
     pub fn write_to<T: fmt::Write>(&self, write: &mut T) -> fmt::Result {
         write!(write, "{}", self.to_string())
     }
 
+    /// Writes the box's text to the file or other [io::Write] implementor.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::TermBox;
+    ///
+    /// let box_ = TermBox::default();
+    /// box_.print_to(&mut std::io::stderr()).expect("Printing box")
+    /// ```
     pub fn print_to<T: io::Write>(&self, write: &mut T) -> io::Result<()> {
         write!(write, "{}", self.to_string())
     }
 
+    /// Prints the box to [stdout](io::stdout).
     pub fn print(&self) {
         let _ = self.print_to(&mut io::stdout());
     }
 
+    /// Converts the box to a [String].
     pub fn to_string(&self) -> String {
         let lines = self.lines.iter().map(CountedString::new).collect::<Vec<_>>();
         let longest_line = lines
@@ -138,9 +151,13 @@ mod tests {
         };
     }
 
+    macro_rules! template_name {
+        ($name:literal) => { concat!("test-input/", $name, ".txt") };
+    }
+
     macro_rules! assert_matches_template {
         ($box:expr, $template:literal) => {{
-            const TEMPLATE_PATH: &str = concat!("test-input/", $template, ".txt");
+            const TEMPLATE_PATH: &str = template_name!($template);
             let template = assert_okay!(fs::read_to_string(TEMPLATE_PATH), "template exists");
             assert_eq!($box, template);
         }};
@@ -149,7 +166,7 @@ mod tests {
     #[allow(dead_code)]
     macro_rules! init_template {
         ($box:expr, $template:expr) => {{
-            const TEMPLATE_PATH: &str = concat!("test-input/", $template, ".txt");
+            const TEMPLATE_PATH: &str = template_name!($template);
             let _ = fs::write(TEMPLATE_PATH, $box).unwrap();
             assert!(false, "Test not yet finalized. Check {} contents and change to proper assertion.", TEMPLATE_PATH)
         }};
@@ -178,15 +195,15 @@ mod tests {
 
     #[test]
     fn empty() {
-        let box_single = Box::default().to_string();
-        let box_double = Box { border_style: BorderStyle::new_double(), lines: Vec::new() }.to_string();
+        let box_single = TermBox::default().to_string();
+        let box_double = TermBox { border_style: BorderStyle::new_double(), lines: Vec::new() }.to_string();
         assert_eq!(box_single, "┌─┐\n└─┘");
         assert_eq!(box_double, "╔═╗\n╚═╝");
     }
 
     #[test]
     fn empty_styled() {
-        let box_ = Box {
+        let box_ = TermBox {
             border_style: BorderStyle::new_double().with_style(Color::Purple),
             lines: Vec::new()
         }.to_string();
@@ -198,7 +215,7 @@ mod tests {
 
     #[test]
     fn unstyled() {
-        let box_ = Box {
+        let box_ = TermBox {
             border_style: BorderStyle::default(),
             lines: strings![
                 "a",
@@ -214,7 +231,7 @@ mod tests {
 
     #[test]
     fn unstyled_with_ansi_text() {
-        let box_ = Box {
+        let box_ = TermBox {
             border_style: BorderStyle::default(),
             lines: strings![
                 "uncolored",
@@ -230,7 +247,7 @@ mod tests {
 
     #[test]
     fn styled() {
-        let box_ = Box {
+        let box_ = TermBox {
             border_style: BorderStyle::new_single().with_style(Color::LightPurple.bold()),
             lines: strings![
                 "some",
@@ -245,7 +262,7 @@ mod tests {
 
     #[test]
     fn styled_with_ansi_text() {
-        let box_ = Box {
+        let box_ = TermBox {
             border_style: BorderStyle::new_double().with_style(Color::Black.italic()),
             lines: strings![
                 "uncolored",
