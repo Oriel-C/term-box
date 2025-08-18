@@ -43,6 +43,19 @@ pub struct BorderStyle {
 }
 
 impl BorderStyle {
+    pub fn new_single() -> Self {
+        Self::default()
+    }
+
+    pub fn new_double() -> Self {
+        Self { shape: BorderShape::Double, style: AnsiStyle::default() }
+    }
+
+    pub fn with_style(mut self, style: impl Into<AnsiStyle>) -> Self {
+        self.style = style.into();
+        self
+    }
+
     fn get_edge_string(&self) -> String {
         let base = self.shape.get_char(BorderChar::Side);
         self.style.paint(base).to_string()
@@ -80,8 +93,8 @@ impl CountedString<'static> {
 
 #[derive(Debug, Clone, Default)]
 pub struct Box {
-    border_style: BorderStyle,
-    lines: Vec<String>
+    pub border_style: BorderStyle,
+    pub lines: Vec<String>
 }
 
 impl Box {
@@ -181,6 +194,23 @@ mod tests {
         };
     }
 
+    macro_rules! assert_matches_template {
+        ($box:expr, $template:literal) => {{
+            const TEMPLATE_PATH: &str = concat!("test-input/", $template, ".txt");
+            let template = assert_okay!(fs::read_to_string(TEMPLATE_PATH), "template exists");
+            assert_eq!($box, template);
+        }};
+    }
+
+    #[allow(dead_code)]
+    macro_rules! init_template {
+        ($box:expr, $template:expr) => {{
+            const TEMPLATE_PATH: &str = concat!("test-input/", $template, ".txt");
+            let _ = fs::write(TEMPLATE_PATH, $box);
+            assert!(false, "Test finalized")
+        }};
+    }
+
     #[derive(Debug, new)]
     #[allow(dead_code)]
     struct LineLenErr {
@@ -204,9 +234,23 @@ mod tests {
 
     #[test]
     fn empty() {
-        let box_ = Box::default().to_string();
-        assert_eq!(box_, "┌─┐\n└─┘");
+        let box_single = Box::default().to_string();
+        let box_double = Box { border_style: BorderStyle::new_double(), lines: Vec::new() }.to_string();
+        assert_eq!(box_single, "┌─┐\n└─┘");
+        assert_eq!(box_double, "╔═╗\n╚═╝");
     }
+
+    #[test]
+    fn empty_styled() {
+        let box_ = Box {
+            border_style: BorderStyle::new_double().with_style(Color::Purple),
+            lines: Vec::new()
+        }.to_string();
+
+        assert_okay!(lines_same_len(&box_));
+        assert_matches_template!(box_, "empty-styled");
+    }
+
 
     #[test]
     fn unstyled() {
@@ -237,7 +281,37 @@ mod tests {
         }.to_string();
 
         assert_okay!(lines_same_len(&box_));
-        let input = assert_okay!(fs::read_to_string("test-input/unstyled-with-ansi-text.txt"), "input exists");
-        assert_eq!(box_, input);
+        assert_matches_template!(box_, "unstyled-with-ansi-text");
+    }
+
+    #[test]
+    fn styled() {
+        let box_ = Box {
+            border_style: BorderStyle::new_single().with_style(Color::LightPurple.bold()),
+            lines: strings![
+                "some",
+                "cool",
+                "text"
+            ]
+        }.to_string();
+
+        assert_okay!(lines_same_len(&box_));
+        assert_matches_template!(box_, "styled");
+    }
+
+    #[test]
+    fn styled_with_ansi_text() {
+        let box_ = Box {
+            border_style: BorderStyle::new_double().with_style(Color::Black.italic()),
+            lines: strings![
+                "uncolored",
+                Color::Red.paint("colored!!"),
+                AnsiStyle::new().bold().paint("bolded"),
+                Color::Blue.bold().paint("both")
+            ]
+        }.to_string();
+
+        assert_okay!(lines_same_len(&box_));
+        assert_matches_template!(box_, "styled-with-ansi-text");
     }
 }
