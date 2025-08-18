@@ -15,10 +15,17 @@ impl BorderChar {
     pub const LEN_BYTES: usize = BorderShape::SINGLE_SHAPES[0].len();
 }
 
+/// Defines the shape of a [TermBox's](super::TermBox) border.
 #[derive(Debug, Clone, Copy, Default)]
 pub enum BorderShape {
+    /// Use a single line for the border: \
+    /// ┌─┐ \
+    /// └─┘
     #[default]
     Single,
+    /// Use a double line for the border: \
+    /// ╔═╗ \
+    /// ╚═╝
     Double
 }
 
@@ -34,6 +41,8 @@ impl BorderShape {
     }
 }
 
+/// Style for a [TermBox's](super::TermBox) border, determing the [shape](BorderStyle::shape)
+/// and [style](BorderStyle::style) of the border.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BorderStyle {
     pub(super) shape: BorderShape,
@@ -41,14 +50,19 @@ pub struct BorderStyle {
 }
 
 impl BorderStyle {
+    /// Creates a new [BorderStyle] with [BorderShape::Single]
+    /// and no styling.
     pub fn new_single() -> Self {
         Self::default()
     }
 
+    /// Creates a new [BorderStyle] with [BorderShape::Double]
+    /// and no styling.
     pub fn new_double() -> Self {
         Self { shape: BorderShape::Double, style: AnsiStyle::default() }
     }
 
+    /// Sets the [AnsiStyle] for the border and returns it.
     pub fn with_style(mut self, style: impl Into<AnsiStyle>) -> Self {
         self.style = style.into();
         self
@@ -59,10 +73,12 @@ impl BorderStyle {
         self.style.paint(base).to_string()
     }
 
+    /// Returns the [BorderShape] for the border.
     pub fn shape(&self) -> BorderShape {
         self.shape
     }
 
+    /// Returns the [AnsiStyle] for the border.
     pub fn style(&self) -> AnsiStyle {
         self.style
     }
