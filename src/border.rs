@@ -11,10 +11,6 @@ pub(super) enum BorderChar {
     Edge = 5
 }
 
-impl BorderChar {
-    pub const LEN_BYTES: usize = BorderShape::SINGLE_SHAPES[0].len();
-}
-
 /// Defines the shape of a [TermBox's](super::TermBox) border.
 #[derive(Debug, Clone, Copy, Default)]
 pub enum BorderShape {
@@ -51,13 +47,13 @@ pub struct BorderStyle {
 
 impl BorderStyle {
     /// Creates a new [BorderStyle] with [BorderShape::Single]
-    /// and no styling.
+    /// and no ANSI styling.
     pub fn new_single() -> Self {
         Self::default()
     }
 
     /// Creates a new [BorderStyle] with [BorderShape::Double]
-    /// and no styling.
+    /// and no ANSI styling.
     pub fn new_double() -> Self {
         Self { shape: BorderShape::Double, style: AnsiStyle::default() }
     }
@@ -83,5 +79,3 @@ impl BorderStyle {
         self.style
     }
 }
-
-
