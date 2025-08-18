@@ -1,66 +1,10 @@
 pub use nu_ansi_term::{Color, Style as AnsiStyle};
 use ansi_width::ansi_width;
+mod border;
+
 use std::{cmp, io, fmt};
-
-#[repr(usize)]
-#[derive(Debug)]
-enum BorderChar {
-    TopLeft = 0,
-    TopRight = 1,
-    Side = 2,
-    BotLeft = 3,
-    BotRight = 4,
-    Edge = 5
-}
-
-impl BorderChar {
-    const LEN_BYTES: usize = BorderShape::SINGLE_SHAPES[0].len();
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub enum BorderShape {
-    #[default]
-    Single,
-    Double
-}
-
-impl BorderShape {
-    const SINGLE_SHAPES: [&str; 6] = [ "┌", "┐", "│", "└", "┘", "─" ];
-    const DOUBLE_SHAPES: [&str; 6] = [ "╔", "╗", "║", "╚", "╝", "═" ];
-
-    fn get_char(self, char: BorderChar) -> &'static str {
-        match self {
-            Self::Single => Self::SINGLE_SHAPES[char as usize],
-            Self::Double => Self::DOUBLE_SHAPES[char as usize]
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct BorderStyle {
-    shape: BorderShape,
-    style: AnsiStyle
-}
-
-impl BorderStyle {
-    pub fn new_single() -> Self {
-        Self::default()
-    }
-
-    pub fn new_double() -> Self {
-        Self { shape: BorderShape::Double, style: AnsiStyle::default() }
-    }
-
-    pub fn with_style(mut self, style: impl Into<AnsiStyle>) -> Self {
-        self.style = style.into();
-        self
-    }
-
-    fn get_edge_string(&self) -> String {
-        let base = self.shape.get_char(BorderChar::Side);
-        self.style.paint(base).to_string()
-    }
-}
+pub use border::{BorderShape, BorderStyle};
+use border::BorderChar;
 
 #[derive(PartialEq, Eq)]
 struct CountedString<'a> {
@@ -206,8 +150,8 @@ mod tests {
     macro_rules! init_template {
         ($box:expr, $template:expr) => {{
             const TEMPLATE_PATH: &str = concat!("test-input/", $template, ".txt");
-            let _ = fs::write(TEMPLATE_PATH, $box);
-            assert!(false, "Test finalized")
+            let _ = fs::write(TEMPLATE_PATH, $box).unwrap();
+            assert!(false, "Test not yet finalized. Check {} contents and change to proper assertion.", TEMPLATE_PATH)
         }};
     }
 
