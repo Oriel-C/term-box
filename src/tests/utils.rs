@@ -1,5 +1,7 @@
+use super::AnsiStyle;
 use derive_new::new;
 use ansi_width::ansi_width;
+use std::cell::LazyCell;
 
 macro_rules! strings {
     ($($strs:expr),*) => {
@@ -64,3 +66,5 @@ pub(crate) fn lines_same_len(string: &str) -> Result<usize, LineLenErr> {
             }
         })
 }
+
+pub(crate) const BOLD: LazyCell<AnsiStyle> = LazyCell::new(| | AnsiStyle::new().bold());

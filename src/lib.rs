@@ -43,16 +43,52 @@ impl CountedString<'static> {
     const EMPTY: Self = Self { str: Cow::Borrowed(""), width: 0 };
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+/// Represents the padding between the edge of the [TermBox] and the text
+/// it contains. By default, no padding is used.
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
 pub struct Padding {
-    pub chr: char,
-    pub count: usize
+    /// The [char] used to provide the padding (usually spaces or tabs).
+    chr: char,
+    /// The number of the [chr](Padding::chr) that should be used for the padding.
+    count: usize
 }
 
 impl Padding {
+    /// Pad the edges of a [TermBox's](TermBox) text by one space.
+    pub const ONE_SPACE: Padding = Self::spaces(1);
+
+    /// Creats a new [Padding] that will not actually pad text.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::Padding;
+    /// assert_eq!(Padding::default(), Padding::none());
+    /// ```
+    pub const fn none() -> Self { Self::new('\0', 0) }
+
+    /// Creates a new [Padding] that pads with the given character and number of spaces.
+    ///
+    /// If the passed [char] is a tab character, it will be replaced with 8 spaces to
+    /// prevent misaligned edges.
+    pub const fn new(chr: char, count: usize) -> Self {
+        match chr {
+            '\t' => Self::spaces(count * 8),
+            _    => Self { chr, count }
+        }
+    }
+
+    /// Creates a new [Padding] that pads with the given number of spaces.
     pub const fn spaces(count: usize) -> Self {
         Self { chr: ' ', count }
     }
+
+    /// Returns the [char] used for padding.
+    pub fn chr(self) -> char { self.chr }
+
+    /// Returns the number of times the [chr](Padding::chr) will be
+    /// repeated in padding.
+    pub fn count(self) -> usize { self.count }
 
     fn get_string(self) -> CountedString<'static> {
         match self.count {
@@ -65,10 +101,14 @@ impl Padding {
     }
 }
 
+/// Represents text in a box that can be displayed in a terminal or other output.
 #[derive(Debug, Clone, Default)]
 pub struct TermBox {
+    /// [BorderStyle] describing how the edges of the box should be styled.
     pub border_style: BorderStyle,
+    /// [Padding] describing how the text should be padded.
     pub padding: Padding,
+    /// Lines of text to display in the box.
     pub lines: Vec<String>
 }
 
@@ -76,21 +116,26 @@ impl TermBox {
     const SIDES: usize = 2;
     const MIN_LINE_LEN: usize = 3;
 
+    /// Appends an additional line to the box's contents.
     pub fn append(&mut self, line: impl ToString) {
         self.lines.push(line.to_string());
     }
 
+    /// Appends an additional line to the owned box's contents and
+    /// returns the box.
     pub fn append_with(mut self, line: impl ToString) -> Self {
         self.append(line);
         self
     }
 
-    /// Writes the box's text to the given [fmt::Write] implementor.
+    /// Writes the box text to the given [fmt::Write] implementor WITHOUT a final newline.
     pub fn write_to<T: fmt::Write>(self, write: &mut T) -> fmt::Result {
         write!(write, "{}", self.into_string())
     }
 
-    /// Writes the box's text to the file or other [io::Write] implementor.
+    /// Writes the box to the file or other [io::Write] implementor WITH a final newline.\
+    /// If the implementor is not connected to a terminal, ANSI styles may not display
+    /// properly.
     ///
     /// # Examples
     ///
@@ -101,10 +146,10 @@ impl TermBox {
     /// box_.print_to(&mut std::io::stderr()).expect("Printing box")
     /// ```
     pub fn print_to<T: io::Write>(self, write: &mut T) -> io::Result<()> {
-        write!(write, "{}", self.into_string())
+        writeln!(write, "{}", self.into_string())
     }
 
-    /// Prints the box to [stdout](io::stdout).
+    /// Prints the box to [stdout](io::stdout) with a final newline.
     pub fn print(self) {
         let _ = self.print_to(&mut io::stdout());
     }
@@ -120,7 +165,7 @@ impl TermBox {
         let line_len = cmp::max(Self::MIN_LINE_LEN, line_len(longest_line, self.padding.count));
 
         // TODO estimate capacity needed for ANSI control sequences
-        let mut buf = String::with_capacity((self.lines.len() + 2) * line_len);
+        let mut buf = String::with_capacity((lines.len() + 2) * line_len);
 
         make_top_line(&mut buf, self.border_style, line_len);
 
@@ -166,12 +211,12 @@ fn make_bottom_line(buf: &mut String, style: BorderStyle, len: usize) {
 
 fn make_top_or_bottom_line(buf: &mut String, style: BorderStyle, len: usize, left: BorderChar, right: BorderChar) {
     let edge_char = style.shape.get_char(BorderChar::Edge);
-    let char_len = edge_char.len();
+    let edge_char_bytes = edge_char.len();
     let mut tmp_buf = edge_char.repeat(len);
 
     // String.len() is in bytes
-    tmp_buf.replace_range(0..char_len, style.shape.get_char(left));
-    tmp_buf.replace_range((tmp_buf.len() - char_len).., style.shape.get_char(right));
+    tmp_buf.replace_range(0..edge_char_bytes, style.shape.get_char(left));
+    tmp_buf.replace_range((tmp_buf.len() - edge_char_bytes).., style.shape.get_char(right));
 
     buf.push_str(&style.style.paint(tmp_buf).to_string());
 }

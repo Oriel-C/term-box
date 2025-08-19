@@ -2,6 +2,7 @@ mod utils;
 
 use super::*;
 use utils::*;
+use nu_ansi_term::AnsiStrings;
 
 #[test]
 fn empty() {
@@ -23,7 +24,6 @@ fn empty_styled() {
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "empty-styled");
 }
-
 
 #[test]
 fn unstyled() {
@@ -50,7 +50,7 @@ fn unstyled_with_ansi_text() {
         lines: strings![
             "uncolored",
             Color::Red.paint("colored!!"),
-            AnsiStyle::new().bold().paint("bolded"),
+            BOLD.paint("bolded"),
             Color::Blue.bold().paint("both")
         ]
     }.into_string();
@@ -83,7 +83,7 @@ fn styled_with_ansi_text() {
         lines: strings![
             "uncolored",
             Color::Red.paint("colored!!"),
-            AnsiStyle::new().bold().paint("bolded"),
+            BOLD.paint("bolded"),
             Color::Blue.bold().paint("both")
         ]
     }.into_string();
@@ -96,7 +96,7 @@ fn styled_with_ansi_text() {
 fn padded() {
     let box_ = TermBox {
         border_style: BorderStyle::default(),
-        padding: Padding::spaces(1),
+        padding: Padding::ONE_SPACE,
         lines: strings![
             "padded",
             "text"
@@ -109,9 +109,8 @@ fn padded() {
 
 #[test]
 fn padded_with_ansi_text() {
-    use nu_ansi_term::AnsiStrings;
     let box_ = TermBox {
-        border_style: BorderStyle::new_double().with_style(AnsiStyle::new().bold()),
+        border_style: BorderStyle::new_double().with_style(*BOLD),
         padding: Padding::spaces(3),
         lines: strings![
             "cool",
@@ -122,4 +121,31 @@ fn padded_with_ansi_text() {
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "padded-with-ansi-text")
+}
+
+#[test]
+fn fat_box() {
+    let box_ = TermBox {
+        border_style: BorderStyle::new_single(),
+        padding: Padding::new('\t', 3),
+        lines: strings![
+            BOLD.paint("F A T"),
+            BOLD.paint("T E X T")
+        ]
+    }.into_string();
+
+    assert_okay!(lines_same_len(&box_));
+    assert_matches_template!(box_, "fat-box")
+}
+
+#[test]
+fn long_box() {
+    let box_ = TermBox {
+        border_style: BorderStyle::new_double(),
+        padding: Padding::none(),
+        lines: str::repeat("Long text ", 3).chars().map(String::from).collect()
+    }.into_string();
+
+    assert_okay!(lines_same_len(&box_));
+    assert_matches_template!(box_, "long-box");
 }

@@ -25,9 +25,11 @@ pub enum BorderShape {
     Double
 }
 
+type Shapes = [&'static str; 6];
+
 impl BorderShape {
-    const SINGLE_SHAPES: [&str; 6] = [ "┌", "┐", "│", "└", "┘", "─" ];
-    const DOUBLE_SHAPES: [&str; 6] = [ "╔", "╗", "║", "╚", "╝", "═" ];
+    const SINGLE_SHAPES: Shapes = [ "┌", "┐", "│", "└", "┘", "─" ];
+    const DOUBLE_SHAPES: Shapes = [ "╔", "╗", "║", "╚", "╝", "═" ];
 
     pub(super) fn get_char(self, char: BorderChar) -> &'static str {
         match self {
@@ -59,6 +61,8 @@ impl BorderStyle {
     }
 
     /// Sets the [AnsiStyle] for the border and returns it.
+    ///
+    /// Styling may not appear properly outside of a terminal.
     pub fn with_style(mut self, style: impl Into<AnsiStyle>) -> Self {
         self.style = style.into();
         self
