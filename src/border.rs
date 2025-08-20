@@ -16,7 +16,7 @@ impl BorderChar {
 }
 
 /// Defines the shape of a [TermBox's](super::TermBox) border.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum BorderShape {
     /// Use a single line for the border: \
     /// ┌─┐ \
@@ -45,7 +45,7 @@ impl BorderShape {
 
 /// Style for a [TermBox's](super::TermBox) border, determing the [shape](BorderStyle::shape)
 /// and [style](BorderStyle::style) of the border.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct BorderStyle {
     pub(super) shape: BorderShape,
     pub(super) ansi: AnsiStyle

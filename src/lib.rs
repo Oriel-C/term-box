@@ -70,6 +70,7 @@ impl Padding {
     /// ```
     /// use term_box::Padding;
     /// assert_eq!(Padding::default(), Padding::none());
+    /// assert_eq!("", Padding::none().into_string());
     /// ```
     pub const fn none() -> Self { Self::new('\0', 0) }
 
@@ -77,6 +78,22 @@ impl Padding {
     ///
     /// If the passed [char] is a tab character, it will be replaced with 8 spaces to
     /// prevent misaligned edges.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::Padding;
+    ///
+    /// let padding = Padding::new('-', 2);
+    /// assert_eq!("--", padding.into_string());
+    /// ```
+    ///
+    /// Tab = spaces: \
+    /// ```
+    /// use term_box::Padding;
+    ///
+    /// assert_eq!(Padding::new('\t', 1), Padding::new(' ', 8));
+    /// ```
     pub const fn new(chr: char, count: usize) -> Self {
         match chr {
             '\t' => Self::spaces(count * 8),
@@ -85,10 +102,21 @@ impl Padding {
     }
 
     /// Creates a new [Padding] that pads with the given number of spaces.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::Padding;
+    ///
+    /// let padding = Padding::spaces(1);
+    /// assert_eq!(padding, Padding::ONE_SPACE);
+    /// assert_eq!(" ", padding.into_string());
+    /// ```
     pub const fn spaces(count: usize) -> Self {
         Self { chr: ' ', count }
     }
 
+    /// Gets the length of the padding in bytes once converted into a string.
     pub const fn len_utf8(self) -> usize {
         self.chr.len_utf8() * self.count
     }
@@ -100,11 +128,25 @@ impl Padding {
     /// repeated in padding.
     pub const fn count(self) -> usize { self.count }
 
+    /// Converts the padding into a string and returns it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::Padding;
+    ///
+    /// let padding = Padding::new('a', 3);
+    /// assert_eq!("aaa", padding.into_string());
+    /// ```
+    pub fn into_string(self) -> String {
+        String::from(self.chr).repeat(self.count)
+    }
+
     fn get_string(self) -> CountedString<'static> {
         match self.count {
             0 => CountedString::EMPTY,
             n => CountedString {
-                str: Cow::Owned(String::from(self.chr).repeat(n)),
+                str: Cow::Owned(self.into_string()),
                 width: n
             }
         }
@@ -112,7 +154,7 @@ impl Padding {
 }
 
 /// Represents text in a box that can be displayed in a terminal or other output.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TermBox {
     /// [BorderStyle] describing how the edges of the box should be styled.
     pub border_style: BorderStyle,
@@ -129,18 +171,60 @@ impl TermBox {
     const MIN_LINE_LEN: usize = 3;
 
     /// Appends an additional line to the box's contents.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::TermBox;
+    ///
+    /// let mut lines = vec![ String::from("hello") ];
+    /// let mut append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
+    ///
+    /// lines.push(String::from("world!"));
+    /// append_box.append("world!");
+    ///
+    /// let push_box = TermBox { lines, ..TermBox::default() };
+    /// assert_eq!(append_box, push_box);
+    /// ```
     pub fn append(&mut self, line: impl ToString) {
         self.lines.push(line.to_string());
     }
 
-    /// Appends an additional line to the owned box's contents and
-    /// returns the box.
+    /// Appends an additional line to the owned box's contents an returns the box.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::TermBox;
+    ///
+    /// let mut lines = vec![ String::from("hello") ];
+    /// let append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
+    ///
+    /// lines.push(String::from("world!"));
+    ///
+    /// let push_box = TermBox { lines, ..TermBox::default() };
+    /// assert_eq!(append_box.append_with("world!"), push_box);
+    /// ```
     pub fn append_with(mut self, line: impl ToString) -> Self {
         self.append(line);
         self
     }
 
     /// Writes the box text to the given [fmt::Write] implementor WITHOUT a final newline.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::TermBox;
+    /// use std::fmt::Write;
+    ///
+    /// let empty_box = TermBox::default();
+    /// let mut out_str = String::new();
+    ///
+    /// empty_box.write_to(&mut out_str);
+    /// assert_eq!(out_str, "┌─┐\n└─┘");
+    /// assert_ne!(out_str, "┌─┐\n└─┘\n");
+    /// ```
     pub fn write_to<T: fmt::Write>(self, write: &mut T) -> fmt::Result {
         write!(write, "{}", self.into_string())
     }
@@ -163,6 +247,18 @@ impl TermBox {
     }
 
     /// Prints the box to [stdout](io::stdout) with a final newline.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::TermBox;
+    ///
+    /// let empty_box = TermBox::default();
+    ///
+    /// // Same output:
+    /// empty_box.clone().print();
+    /// println!("{}", empty_box.into_string());
+    /// ```
     pub fn print(self) {
         let _ = self.print_to(&mut io::stdout());
     }
