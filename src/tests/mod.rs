@@ -28,14 +28,13 @@ fn empty_styled() {
 #[test]
 fn unstyled() {
     let box_ = TermBox {
-        border_style: BorderStyle::default(),
-        padding: Padding::default(),
         lines: strings![
             "a",
             "few",
             "lines",
             "for testing"
-        ]
+        ],
+        ..TermBox::default()
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
@@ -45,14 +44,13 @@ fn unstyled() {
 #[test]
 fn unstyled_with_ansi_text() {
     let box_ = TermBox {
-        border_style: BorderStyle::default(),
-        padding: Padding::default(),
         lines: strings![
             "uncolored",
             Color::Red.paint("colored!!"),
             BOLD.paint("bolded"),
             Color::Blue.bold().paint("both")
-        ]
+        ],
+        ..TermBox::default()
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
@@ -63,12 +61,12 @@ fn unstyled_with_ansi_text() {
 fn styled() {
     let box_ = TermBox {
         border_style: BorderStyle::new_single().with_style(Color::LightPurple.bold()),
-        padding: Padding::default(),
         lines: strings![
             "some",
             "cool",
             "text"
-        ]
+        ],
+        ..TermBox::default()
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
@@ -79,13 +77,13 @@ fn styled() {
 fn styled_with_ansi_text() {
     let box_ = TermBox {
         border_style: BorderStyle::new_double().with_style(Color::Black.italic()),
-        padding: Padding::default(),
         lines: strings![
             "uncolored",
             Color::Red.paint("colored!!"),
             BOLD.paint("bolded"),
             Color::Blue.bold().paint("both")
-        ]
+        ],
+        ..TermBox::default()
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
@@ -95,12 +93,12 @@ fn styled_with_ansi_text() {
 #[test]
 fn padded() {
     let box_ = TermBox {
-        border_style: BorderStyle::default(),
         padding: Padding::ONE_SPACE,
         lines: strings![
             "padded",
             "text"
-        ]
+        ],
+        ..TermBox::default()
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
@@ -112,6 +110,7 @@ fn padded_with_ansi_text() {
     let box_ = TermBox {
         border_style: BorderStyle::new_double().with_style(*BOLD),
         padding: Padding::spaces(3),
+        titles: Titles::none(),
         lines: strings![
             "cool",
             AnsiStrings(&[ Color::Red.paint("pa"), Color::Default.paint("dd"), Color::Purple.paint("ed") ]),
@@ -131,7 +130,8 @@ fn fat_box() {
         lines: strings![
             BOLD.paint("F A T"),
             BOLD.paint("T E X T")
-        ]
+        ],
+        ..TermBox::default()
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
@@ -143,9 +143,73 @@ fn long_box() {
     let box_ = TermBox {
         border_style: BorderStyle::new_double(),
         padding: Padding::none(),
-        lines: str::repeat("Long text ", 3).chars().map(String::from).collect()
+        lines: str::repeat("Long text ", 3).chars().map(String::from).collect(),
+        ..TermBox::default()
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
     assert_matches_template!(box_, "long-box");
+}
+
+// TODO: necessary test: ANSI-control-only titles (all 3 positions; can be done in 1 func)
+
+#[test]
+fn titles_left() {
+    let box_ = TermBox {
+        border_style: BorderStyle::new_single(),
+        padding: Padding::ONE_SPACE,
+        titles: Titles {
+            top: Title("the", TitlePosition::Left),
+            bottom: Title(Color::Red.bold().paint("ever"), TitlePosition::Left)
+        },
+        lines: strings![
+            "coolest",
+            "box"
+        ]
+    }.into_string();
+
+    assert_okay!(lines_same_len(&box_));
+    assert_matches_template!(box_, "titles-left")
+}
+
+#[test]
+fn titles_center() {
+    let box_ = TermBox {
+        border_style: BorderStyle::new_double(),
+        padding: Padding::ONE_SPACE,
+        titles: Titles {
+            top: Title(BOLD.paint("center"), TitlePosition::Centered),
+            bottom: Title(BOLD.paint("of the universe"), TitlePosition::Centered),
+        },
+        lines: strings![
+            "the church",
+            "viewed the",
+            "earth",
+            "as the"
+        ]
+    }.into_string();
+
+    assert_okay!(lines_same_len(&box_));
+    assert_matches_template!(box_, "titles-center")
+}
+
+#[test]
+fn titles_right() {
+    let box_ = TermBox {
+        border_style: BorderStyle::new_single().with_style(Color::Cyan),
+        padding: Padding::none(),
+        titles: Titles {
+            top: Title(Color::LightMagenta.paint("Nicolaus"), TitlePosition::Right),
+            bottom: Title(Color::Blue.bold().paint("Copernicus"), TitlePosition::Right)
+        },
+        lines: strings![
+            "was censured",
+            "for saying",
+            "otherwise"
+        ]
+    }.into_string();
+
+    assert_okay!(lines_same_len(&box_));
+    // init_template!(&box_, "titles-right");
+    assert_matches_template!(box_, "titles-right")
 }
