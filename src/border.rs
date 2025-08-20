@@ -1,7 +1,7 @@
 use super::AnsiStyle;
 
 #[repr(usize)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(super) enum BorderChar {
     TopLeft = 0,
     TopRight = 1,
@@ -9,6 +9,10 @@ pub(super) enum BorderChar {
     BotLeft = 3,
     BotRight = 4,
     Edge = 5
+}
+
+impl BorderChar {
+    pub const NUM_BYTES: usize = BorderShape::SINGLE_SHAPES[0].len();
 }
 
 /// Defines the shape of a [TermBox's](super::TermBox) border.
@@ -44,42 +48,36 @@ impl BorderShape {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BorderStyle {
     pub(super) shape: BorderShape,
-    pub(super) style: AnsiStyle
+    pub(super) ansi: AnsiStyle
 }
 
 impl BorderStyle {
     /// Creates a new [BorderStyle] with [BorderShape::Single]
     /// and no ANSI styling.
-    pub fn new_single() -> Self {
-        Self::default()
-    }
+    pub fn new_single() -> Self { Self::default() }
 
     /// Creates a new [BorderStyle] with [BorderShape::Double]
     /// and no ANSI styling.
     pub fn new_double() -> Self {
-        Self { shape: BorderShape::Double, style: AnsiStyle::default() }
+        Self { shape: BorderShape::Double, ansi: AnsiStyle::default() }
     }
 
     /// Sets the [AnsiStyle] for the border and returns it.
     ///
     /// Styling may not appear properly outside of a terminal.
     pub fn with_style(mut self, style: impl Into<AnsiStyle>) -> Self {
-        self.style = style.into();
+        self.ansi = style.into();
         self
     }
 
     pub(super) fn get_edge_string(&self) -> String {
         let base = self.shape.get_char(BorderChar::Side);
-        self.style.paint(base).to_string()
+        self.ansi.paint(base).to_string()
     }
 
     /// Returns the [BorderShape] for the border.
-    pub fn shape(&self) -> BorderShape {
-        self.shape
-    }
+    pub fn shape(&self) -> BorderShape { self.shape }
 
     /// Returns the [AnsiStyle] for the border.
-    pub fn style(&self) -> AnsiStyle {
-        self.style
-    }
+    pub fn ansi_style(&self) -> AnsiStyle { self.ansi }
 }

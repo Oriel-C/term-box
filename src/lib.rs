@@ -89,12 +89,16 @@ impl Padding {
         Self { chr: ' ', count }
     }
 
+    pub const fn len_utf8(self) -> usize {
+        self.chr.len_utf8() * self.count
+    }
+
     /// Returns the [char] used for padding.
-    pub fn chr(self) -> char { self.chr }
+    pub const fn chr(self) -> char { self.chr }
 
     /// Returns the number of times the [chr](Padding::chr) will be
     /// repeated in padding.
-    pub fn count(self) -> usize { self.count }
+    pub const fn count(self) -> usize { self.count }
 
     fn get_string(self) -> CountedString<'static> {
         match self.count {
@@ -165,11 +169,10 @@ impl TermBox {
 
     /// Converts the box to a [String].
     pub fn into_string(self) -> String {
-        let lines = self.lines.iter().map(CountedString::new).collect::<Vec<_>>();
+        let mut lines = Vec::with_capacity(self.lines.len());
         let mut longest_line: &CountedString = cmp::max(&self.titles.top.text, &self.titles.bottom.text);
-        
-        for line in lines.iter() {
-            longest_line = cmp::max(longest_line, line);
+        if let Some(longest_idx) = self.count_and_find_longest(&mut lines) {
+            longest_line = cmp::max(longest_line, &lines[longest_idx]);
         }
 
         let line_len = cmp::max(Self::MIN_LINE_LEN, line_len(longest_line, self.padding.count));
@@ -188,6 +191,21 @@ impl TermBox {
         make_bottom_line(&mut buf, &self, line_len);
 
         buf
+    }
+
+    fn count_and_find_longest<'a>(&'a self, lines: &mut Vec<CountedString<'a>>) -> Option<usize> {
+        let mut max_idx = None;
+
+        for (idx, line) in self.lines.iter().map(CountedString::new).enumerate() {
+            match max_idx {
+                Some(max) if line > lines[max] => max_idx = Some(idx),
+                None => max_idx = Some(idx),
+                _ => {}
+            }
+            lines.push(line)
+        }
+
+        max_idx
     }
 }
 
@@ -239,26 +257,45 @@ const DEFAULT_DIST_FROM_CORNER: usize = 1;
 
 fn make_top_or_bottom_line(buf: &mut String, args: HorizLineArgs) {
     let style = args.style;
-    let title = args.title;
-    let edge_char = style.shape.get_char(BorderChar::Edge);
+    let shape = style.shape;
+    let edge_char = shape.get_char(BorderChar::Edge);
     // String.len() is in bytes
-    let edge_char_bytes = edge_char.len();
-    let mut tmp_buf = String::with_capacity((edge_char_bytes * args.len) - title.text.width);
-    tmp_buf += style.shape.get_char(args.left);
+    let mut tmp_buf = alloc_title_buf(&args);
+    tmp_buf += shape.get_char(args.left);
 
-    let right_char = style.shape.get_char(args.right);
-    if !title.is_empty() {
-        let left_pad_len = title.left_pad_len(args.len, DEFAULT_DIST_FROM_CORNER);
-        tmp_buf += &edge_char.repeat(left_pad_len);
-        tmp_buf += title.text.str();
-
-        let right_pad_len = args.len - title.text.width - left_pad_len - 2; // -2: corners
-        // titles may reset the style, so apply it again
-        tmp_buf += &style.style.paint(edge_char.repeat(right_pad_len) + right_char).to_string();
+    let right_char = shape.get_char(args.right);
+    if !args.title.is_empty() {
+        tmp_buf = ins_title(tmp_buf, edge_char, right_char, &args);
     } else {
-        tmp_buf += &(edge_char.repeat(args.len - 2) + right_char);
+        tmp_buf += &(edge_char.repeat(args.len - TermBox::SIDES) + right_char);
     }
 
-    buf.push_str(&style.style.paint(tmp_buf).to_string());
+    // Works in all cases except a styled right title, which would be fairly complicated
+    // for something not very worth covering for
+    // let actual = tmp_buf.len();
+    // assert!(actual == init_cap, "{actual} != {init_cap}");
+
+    if style.ansi.is_plain() {
+        buf.push_str(&tmp_buf);
+    } else {
+        buf.push_str(&style.ansi.paint(tmp_buf).to_string());
+    }
 }
 
+fn alloc_title_buf(args: &HorizLineArgs) -> String {
+    let mut cap = BorderChar::NUM_BYTES * (args.len - args.title.text.width);
+    cap += args.title.len_bytes();
+    String::with_capacity(cap)
+}
+
+fn ins_title(mut buf: String, edge_char: &str, right_char: &str, args: &HorizLineArgs) -> String {
+    let title = args.title;
+    let left_pad_len = title.left_pad_len(args.len, DEFAULT_DIST_FROM_CORNER);
+    buf += &edge_char.repeat(left_pad_len);
+    buf += title.text.str();
+
+    let right_pad_len = args.len - title.text.width - left_pad_len - TermBox::SIDES; // -2: corners
+    // titles may reset the style, so apply it again
+    buf += &args.style.ansi.paint(edge_char.repeat(right_pad_len) + right_char).to_string();
+    buf
+}

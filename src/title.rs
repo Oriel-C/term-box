@@ -10,10 +10,6 @@ pub enum TitlePosition {
     Right
 }
 
-impl TitlePosition {
-    
-}
-
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Title {
     pub(crate) text: CountedString<'static>,
@@ -29,6 +25,10 @@ impl Title {
     pub fn is_empty(&self) -> bool {
         // len, not width: may be used for control characters
         self.text.str().len() == 0
+    }
+
+    pub(crate) fn len_bytes(&self) -> usize {
+        self.text.str.len()
     }
 
     pub(crate) fn left_pad_len(&self, total_len: usize, dist_from_corner: usize) -> usize {
@@ -60,6 +60,7 @@ mod cons {
     use super::*;
 
     /// Constructs a new [Title](super::Title).
+    #[allow(non_snake_case)]
     pub fn Title(text: impl ToString, pos: TitlePosition) -> Title {
         Title {
             text: CountedString::owned(text.to_string()),
