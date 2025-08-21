@@ -246,7 +246,7 @@ fn make_bottom_line(buf: &mut String, tbox: &TermBox, len: usize) {
     })
 }
 
-const DEFAULT_DIST_FROM_CORNER: usize = 1;
+pub(crate) const DEFAULT_DIST_FROM_CORNER: usize = 1;
 
 fn make_top_or_bottom_line(buf: &mut String, args: HorizLineArgs) {
     let style = args.style;
@@ -276,19 +276,27 @@ fn make_top_or_bottom_line(buf: &mut String, args: HorizLineArgs) {
 }
 
 fn alloc_title_buf(args: &HorizLineArgs) -> String {
-    let mut cap = BorderChar::NUM_BYTES * (args.len - args.title.text.width);
+    let mut cap = BorderChar::NUM_BYTES * (args.len - args.title.width());
     cap += args.title.len_bytes();
     String::with_capacity(cap)
 }
 
 fn ins_title(mut buf: String, edge_char: &str, right_char: &str, args: &HorizLineArgs) -> String {
     let title = args.title;
-    let left_pad_len = title.left_pad_len(args.len, DEFAULT_DIST_FROM_CORNER);
+    let left_pad_len = title.left_pad_len(args.len);
     buf += &edge_char.repeat(left_pad_len);
-    buf += title.text.str();
+    buf += title.text();
 
-    let right_pad_len = args.len - title.text.width - left_pad_len - TermBox::SIDES; // -2: corners
+    // let right_pad_len = args.len - (title.width() + left_pad_len + DEFAULT_DIST_FROM_CORNER_INC); //- DEFAULT_DIST_FROM_CORNER_INC;
+    let right_pad_len = title.right_pad_len(args.len);
+    let right_pad = edge_char.repeat(right_pad_len) + right_char;
+
     // titles may reset the style, so apply it again
-    buf += &args.style.ansi.paint(edge_char.repeat(right_pad_len) + right_char).to_string();
+    if args.style.ansi.is_plain() {
+        buf += &right_pad;
+    } else {
+        buf += &args.style.ansi.paint(right_pad).to_string();
+    }
+
     buf
 }

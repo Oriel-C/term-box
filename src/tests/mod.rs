@@ -178,8 +178,8 @@ fn titles_center() {
         border_style: BorderStyle::new_double(),
         padding: Padding::ONE_SPACE,
         titles: Titles {
-            top: Title(BOLD.paint("center"), TitlePosition::Centered),
-            bottom: Title(BOLD.paint("of the universe"), TitlePosition::Centered),
+            top: Title(BOLD.paint("center"), TitlePosition::Centered), // Test: even title, odd len
+            bottom: Title(BOLD.paint("of the universe"), TitlePosition::Centered), // Test: odd title, odd len
         },
         lines: strings![
             "the church",
@@ -190,6 +190,7 @@ fn titles_center() {
     }.into_string();
 
     assert_okay!(lines_same_len(&box_));
+    // init_template!(&box_, "titles-center");
     assert_matches_template!(box_, "titles-center")
 }
 
@@ -212,4 +213,24 @@ fn titles_right() {
     assert_okay!(lines_same_len(&box_));
     // init_template!(&box_, "titles-right");
     assert_matches_template!(box_, "titles-right")
+}
+
+#[test]
+fn titles_center_2() {
+    let box_ = TermBox {
+        border_style: BorderStyle::new_single(),
+        padding: Padding::none(),
+        titles: Titles {
+            top: Title(BOLD.paint("odd"), TitlePosition::Centered), // Test: odd title, even len
+            bottom: Title(AnsiStyle::new().italic().paint("even"), TitlePosition::Centered) // Test: even title, even len
+        },
+        lines: strings![
+            "even",
+            "widths"
+        ]
+    }.into_string();
+
+    assert_okay!(lines_same_len(&box_));
+    // init_template!(&box_, "titles-center-2");
+    assert_matches_template!(box_, "titles-center-2");
 }
