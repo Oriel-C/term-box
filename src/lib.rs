@@ -1,11 +1,13 @@
 mod border;
 #[cfg(test)]
 mod tests;
+mod padding;
 pub mod title;
 
 pub use nu_ansi_term::{Color, Style as AnsiStyle};
 pub use border::{BorderShape, BorderStyle};
 pub use title::*;
+pub use padding::Padding;
 
 use ansi_width::ansi_width;
 use std::{cmp, io, fmt, borrow::{Borrow, Cow}};
@@ -46,110 +48,6 @@ impl CountedString<'static> {
 
     fn owned(string: String) -> Self {
         Self { width: ansi_width(&string), str: Cow::Owned(string) }
-    }
-}
-
-/// Represents the padding between the edge of the [TermBox] and the text
-/// it contains. By default, no padding is used.
-#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
-pub struct Padding {
-    /// The [char] used to provide the padding (usually spaces or tabs).
-    chr: char,
-    /// The number of the [chr](Padding::chr) that should be used for the padding.
-    count: usize
-}
-
-impl Padding {
-    /// Pad the edges of a [TermBox's](TermBox) text by one space.
-    pub const ONE_SPACE: Padding = Self::spaces(1);
-
-    /// Creats a new [Padding] that will not actually pad text.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use term_box::Padding;
-    /// assert_eq!(Padding::default(), Padding::none());
-    /// assert_eq!("", Padding::none().into_string());
-    /// ```
-    pub const fn none() -> Self { Self::new('\0', 0) }
-
-    /// Creates a new [Padding] that pads with the given character and number of spaces.
-    ///
-    /// If the passed [char] is a tab character, it will be replaced with 8 spaces to
-    /// prevent misaligned edges.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use term_box::Padding;
-    ///
-    /// let padding = Padding::new('-', 2);
-    /// assert_eq!("--", padding.into_string());
-    /// ```
-    ///
-    /// Tab = spaces: \
-    /// ```
-    /// use term_box::Padding;
-    ///
-    /// assert_eq!(Padding::new('\t', 1), Padding::new(' ', 8));
-    /// ```
-    pub const fn new(chr: char, count: usize) -> Self {
-        match chr {
-            '\t' => Self::spaces(count * 8),
-            _    => Self { chr, count }
-        }
-    }
-
-    /// Creates a new [Padding] that pads with the given number of spaces.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use term_box::Padding;
-    ///
-    /// let padding = Padding::spaces(1);
-    /// assert_eq!(padding, Padding::ONE_SPACE);
-    /// assert_eq!(" ", padding.into_string());
-    /// ```
-    pub const fn spaces(count: usize) -> Self {
-        Self { chr: ' ', count }
-    }
-
-    /// Gets the length of the padding in bytes once converted into a string.
-    pub const fn len_utf8(self) -> usize {
-        self.chr.len_utf8() * self.count
-    }
-
-    /// Returns the [char] used for padding.
-    pub const fn chr(self) -> char { self.chr }
-
-    /// Returns the number of times the [chr](Padding::chr) will be
-    /// repeated in padding.
-    pub const fn count(self) -> usize { self.count }
-
-    /// Converts the padding into a string and returns it.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use term_box::Padding;
-    ///
-    /// let padding = Padding::new('a', 3);
-    /// assert_eq!("aaa", padding.into_string());
-    /// ```
-    pub fn into_string(self) -> String {
-        String::from(self.chr).repeat(self.count)
-    }
-
-    fn get_string(self) -> CountedString<'static> {
-        match self.count {
-            0 => CountedString::EMPTY,
-            n => CountedString {
-                str: Cow::Owned(self.into_string()),
-                width: n
-            }
-        }
     }
 }
 
@@ -216,7 +114,6 @@ impl TermBox {
     ///
     /// ```
     /// use term_box::TermBox;
-    /// use std::fmt::Write;
     ///
     /// let empty_box = TermBox::default();
     /// let mut out_str = String::new();
@@ -271,7 +168,7 @@ impl TermBox {
             longest_line = cmp::max(longest_line, &lines[longest_idx]);
         }
 
-        let line_len = cmp::max(Self::MIN_LINE_LEN, line_len(longest_line, self.padding.count));
+        let line_len = cmp::max(Self::MIN_LINE_LEN, line_len(longest_line, self.padding.count()));
 
         // TODO estimate capacity needed for ANSI control sequences
         let mut buf = String::with_capacity((lines.len() + 2) * line_len);
@@ -279,7 +176,7 @@ impl TermBox {
         make_top_line(&mut buf, &self, line_len);
 
         let edge_string = &self.border_style.get_edge_string();
-        let pad_string = &self.padding.get_string();
+        let pad_string = &self.padding.into_counted_string();
         for line in lines.iter() {
             make_line(&mut buf, edge_string, pad_string, line, line_len)
         }
