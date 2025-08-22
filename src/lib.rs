@@ -133,7 +133,6 @@ impl TermBox {
 
         let line_len = cmp::max(Self::MIN_LINE_LEN, line_len(longest_line, self.padding.count()));
 
-        // TODO estimate capacity needed for ANSI control sequences
         let mut buf = String::with_capacity((lines.len() + 2) * line_len);
 
         make_top_line(&mut buf, &self, line_len);

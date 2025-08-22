@@ -1,3 +1,53 @@
+//! Module for [Titles] to be displayed in a box.
+//!
+//! # Examples
+//!
+//! A box with a simple, centered title at the top: \
+//! ```
+//! use term_box::*; // All code from this module is re-exported through the term_box module
+//! 
+//! let ex = TermBox {
+//!     titles: Titles {
+//!         top: Title("box", TitlePosition::Centered),
+//!         bottom: Title::empty()
+//!     },
+//!     lines: lines![ "... stuff ..." ],
+//!     padding: Padding::ONE_SPACE,
+//!     ..TermBox::default()
+//! };
+//!
+//! let output = "
+//! ┌──────box──────┐
+//! │ ... stuff ... │
+//! └───────────────┘
+//! ";
+//!
+//! assert_eq!(ex.into_string(), output.trim());
+//! ```
+//!
+//! A more stylishly-titled box: \
+//! ```
+//! use term_box::*;
+//!
+//! let ex = TermBox {
+//!     titles: Titles {
+//!         top: Title("hello", TitlePosition::Left),
+//!         bottom: Title("world!", TitlePosition::Right)
+//!     },
+//!     lines: lines![ "strange" ],
+//!     padding: Padding::spaces(2),
+//!     ..TermBox::default()
+//! };
+//!
+//! let output = "
+//! ┌─hello─────┐
+//! │  strange  │
+//! └────world!─┘
+//! ";
+//!
+//! assert_eq!(ex.into_string(), output.trim());
+//! ```
+
 use super::{CountedString, DEFAULT_DIST_FROM_CORNER, TermBox};
 
 pub use cons::Title;
@@ -20,7 +70,8 @@ pub enum TitlePosition {
     Right
 }
 
-/// A title displayed in the border of the box itself.
+/// A title displayed in the border of the box itself. See the [module-level docs](../../term_box/title/index.html)
+/// for examples.
 ///
 /// Construct with [Title::empty] or the [Title](cons::Title) function.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -121,6 +172,8 @@ fn center_pad_len(width: usize, total_len: usize, parity_diff_mod: usize) -> usi
 ///
 /// A term box may have up to two titles: one at the top, one at the bottom.
 /// Titles are placed inside the border of the box.
+///
+/// See the [module-level docs](../../term_box/title/index.html) for examples.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Titles {
     /// The title to display at the top of the box.
