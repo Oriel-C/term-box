@@ -28,7 +28,7 @@ fn empty_styled() {
 #[test]
 fn unstyled() {
     let box_ = TermBox {
-        lines: strings![
+        lines: lines![
             "a",
             "few",
             "lines",
@@ -44,7 +44,7 @@ fn unstyled() {
 #[test]
 fn unstyled_with_ansi_text() {
     let box_ = TermBox {
-        lines: strings![
+        lines: lines![
             "uncolored",
             Color::Red.paint("colored!!"),
             BOLD.paint("bolded"),
@@ -61,7 +61,7 @@ fn unstyled_with_ansi_text() {
 fn styled() {
     let box_ = TermBox {
         border_style: BorderStyle::new_single().with_style(Color::LightPurple.bold()),
-        lines: strings![
+        lines: lines![
             "some",
             "cool",
             "text"
@@ -77,7 +77,7 @@ fn styled() {
 fn styled_with_ansi_text() {
     let box_ = TermBox {
         border_style: BorderStyle::new_double().with_style(Color::Black.italic()),
-        lines: strings![
+        lines: lines![
             "uncolored",
             Color::Red.paint("colored!!"),
             BOLD.paint("bolded"),
@@ -94,7 +94,7 @@ fn styled_with_ansi_text() {
 fn padded() {
     let box_ = TermBox {
         padding: Padding::ONE_SPACE,
-        lines: strings![
+        lines: lines![
             "padded",
             "text"
         ],
@@ -111,7 +111,7 @@ fn padded_with_ansi_text() {
         border_style: BorderStyle::new_double().with_style(*BOLD),
         padding: Padding::spaces(3),
         titles: Titles::none(),
-        lines: strings![
+        lines: lines![
             "cool",
             AnsiStrings(&[ Color::Red.paint("pa"), Color::Default.paint("dd"), Color::Purple.paint("ed") ]),
             Color::Blue.paint("text")
@@ -127,7 +127,7 @@ fn fat_box() {
     let box_ = TermBox {
         border_style: BorderStyle::new_single(),
         padding: Padding::new('\t', 3),
-        lines: strings![
+        lines: lines![
             BOLD.paint("F A T"),
             BOLD.paint("T E X T")
         ],
@@ -162,7 +162,7 @@ fn titles_left() {
             top: Title("the", TitlePosition::Left),
             bottom: Title(Color::Red.bold().paint("ever"), TitlePosition::Left)
         },
-        lines: strings![
+        lines: lines![
             "coolest",
             "box"
         ]
@@ -181,7 +181,7 @@ fn titles_center() {
             top: Title(BOLD.paint("center"), TitlePosition::Centered), // Test: even title, odd len
             bottom: Title(BOLD.paint("of the universe"), TitlePosition::Centered), // Test: odd title, odd len
         },
-        lines: strings![
+        lines: lines![
             "the church",
             "viewed the",
             "earth",
@@ -203,7 +203,7 @@ fn titles_right() {
             top: Title(Color::LightMagenta.paint("Nicolaus"), TitlePosition::Right),
             bottom: Title(Color::Blue.bold().paint("Copernicus"), TitlePosition::Right)
         },
-        lines: strings![
+        lines: lines![
             "was censured",
             "for saying",
             "otherwise"
@@ -224,7 +224,7 @@ fn titles_center_2() {
             top: Title(BOLD.paint("odd"), TitlePosition::Centered), // Test: odd title, even len
             bottom: Title(AnsiStyle::new().italic().paint("even"), TitlePosition::Centered) // Test: even title, even len
         },
-        lines: strings![
+        lines: lines![
             "even",
             "widths"
         ]

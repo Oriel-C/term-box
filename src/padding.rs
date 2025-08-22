@@ -97,10 +97,7 @@ impl Padding {
     pub(super) fn into_counted_string(self) -> CountedString<'static> {
         match self.count {
             0 => CountedString::EMPTY,
-            n => CountedString {
-                str: Cow::Owned(self.into_string()),
-                width: n
-            }
+            n => CountedString::counted(self.into_string(), n)
         }
     }
 }

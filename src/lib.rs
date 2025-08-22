@@ -2,6 +2,7 @@ mod border;
 #[cfg(test)]
 mod tests;
 mod padding;
+pub mod line;
 pub mod title;
 
 pub use nu_ansi_term::{Color, Style as AnsiStyle};
@@ -9,47 +10,9 @@ pub use border::{BorderShape, BorderStyle};
 pub use title::*;
 pub use padding::Padding;
 
-use ansi_width::ansi_width;
-use std::{cmp, io, fmt, borrow::{Borrow, Cow}};
+use std::{cmp, io, fmt};
 use border::BorderChar;
-
-#[derive(PartialEq, Eq, Debug, Clone, Default)]
-struct CountedString<'a> {
-    str: Cow<'a, str>,
-    width: usize
-}
-
-impl cmp::PartialOrd for CountedString<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl cmp::Ord for CountedString<'_> {
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
-        self.width.cmp(&other.width)
-    }
-}
-
-impl<'a> CountedString<'a> {
-    fn new(string: impl Into<Cow<'a, str>>) -> Self {
-        let str = string.into();
-        let width = ansi_width(str.borrow());
-        Self { str, width }
-    }
-
-    fn str(&'a self) -> &'a str {
-        self.str.borrow()
-    }
-}
-
-impl CountedString<'static> {
-    const EMPTY: Self = Self { str: Cow::Borrowed(""), width: 0 };
-
-    fn owned(string: String) -> Self {
-        Self { width: ansi_width(&string), str: Cow::Owned(string) }
-    }
-}
+use line::CountedString;
 
 /// Represents text in a box that can be displayed in a terminal or other output.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -73,9 +36,9 @@ impl TermBox {
     /// # Examples
     ///
     /// ```
-    /// use term_box::TermBox;
+    /// use term_box::{lines, TermBox};
     ///
-    /// let mut lines = vec![ String::from("hello") ];
+    /// let mut lines = lines![ "hello" ];
     /// let mut append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
     ///
     /// lines.push(String::from("world!"));
@@ -93,9 +56,9 @@ impl TermBox {
     /// # Examples
     ///
     /// ```
-    /// use term_box::TermBox;
+    /// use term_box::{lines, TermBox};
     ///
-    /// let mut lines = vec![ String::from("hello") ];
+    /// let mut lines = lines![ "hello" ];
     /// let append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
     ///
     /// lines.push(String::from("world!"));
@@ -284,14 +247,14 @@ fn alloc_title_buf(args: &HorizLineArgs) -> String {
 fn ins_title(mut buf: String, edge_char: &str, right_char: &str, args: &HorizLineArgs) -> String {
     let title = args.title;
     let left_pad_len = title.left_pad_len(args.len);
+
     buf += &edge_char.repeat(left_pad_len);
     buf += title.text();
 
-    // let right_pad_len = args.len - (title.width() + left_pad_len + DEFAULT_DIST_FROM_CORNER_INC); //- DEFAULT_DIST_FROM_CORNER_INC;
     let right_pad_len = title.right_pad_len(args.len);
     let right_pad = edge_char.repeat(right_pad_len) + right_char;
 
-    // titles may reset the style, so apply it again
+    // titles may reset the style, so apply it again if we have one
     if args.style.ansi.is_plain() {
         buf += &right_pad;
     } else {

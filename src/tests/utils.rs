@@ -3,12 +3,6 @@ use derive_new::new;
 use ansi_width::ansi_width;
 use std::cell::LazyCell;
 
-macro_rules! strings {
-    ($($strs:expr),*) => {
-        vec![ $($strs.to_string()),* ]
-    }
-}
-
 macro_rules! assert_okay {
     ($expr:expr $(, $name:literal)?) => {
         match $expr {
@@ -39,7 +33,6 @@ macro_rules! init_template {
     }};
 }
 
-pub(crate) use strings;
 pub(crate) use assert_okay;
 pub(crate) use template_name;
 pub(crate) use assert_matches_template;
