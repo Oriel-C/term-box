@@ -1,8 +1,15 @@
-use std::borrow::Cow;
+#[allow(unused_imports)] // Used extensively in documentation, makes writing it easier.
+use super::TermBox;
 use super::CountedString;
 
 /// Represents the padding between the edge of the [TermBox] and the text
-/// it contains. By default, no padding is used.
+/// it contains.
+///
+/// Padding appears between the horizontal edges of a [TermBox] and
+/// the lines of text within. To vertically pad a [TermBox], add blank lines
+/// to the start and end of the [lines](TermBox::lines) vector.
+///
+/// By default, boxes have no padding ([Padding::none]).
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
 pub struct Padding {
     /// The [char] used to provide the padding (usually spaces or tabs).
@@ -15,7 +22,7 @@ impl Padding {
     /// Pad the edges of a [TermBox's](TermBox) text by one space.
     pub const ONE_SPACE: Padding = Self::spaces(1);
 
-    /// Creats a new [Padding] that will not actually pad text.
+    /// Creates a new [Padding] that will not actually pad text.
     ///
     /// # Examples
     ///
@@ -29,7 +36,8 @@ impl Padding {
     /// Creates a new [Padding] that pads with the given character and number of spaces.
     ///
     /// If the passed [char] is a tab character, it will be replaced with 8 spaces to
-    /// prevent misaligned edges.
+    /// prevent misaligned edges. Other whitespace characters are not accounted for
+    /// and may cause formatting issues.
     ///
     /// # Examples
     ///
@@ -40,7 +48,8 @@ impl Padding {
     /// assert_eq!("--", padding.into_string());
     /// ```
     ///
-    /// Tab = spaces: \
+    /// Tab = spaces:
+    ///
     /// ```
     /// use term_box::Padding;
     ///

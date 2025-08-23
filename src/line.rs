@@ -1,6 +1,36 @@
 use std::{borrow::{Borrow, Cow}, cmp};
 use ansi_width::ansi_width;
 
+/// Creates a vector of lines for a [TermBox](super::TermBox).
+///
+/// All arguments must implement [ToString] or otherwise have a `to_string` method.
+/// 
+/// # Examples
+///
+/// ```
+/// use term_box::{TermBox, lines, AnsiStyle};
+///
+/// let box_ = TermBox {
+///     lines: lines![
+///         4,
+///         "lines of",
+///         AnsiStyle::new().bold().paint("styled"),
+///         String::from("text")
+///     ],
+///     ..TermBox::default()
+/// };
+///
+/// let output = format!("
+/// ┌────────┐
+/// │4       │
+/// │lines of│
+/// │{lin3}  │
+/// │text    │
+/// └────────┘
+/// ", lin3 = AnsiStyle::new().bold().paint("styled"));
+///
+/// assert_eq!(box_.into_string(), output.trim());
+/// ```
 #[macro_export]
 macro_rules! lines {
     ($($lines:expr),*) => {

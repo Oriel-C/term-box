@@ -2,7 +2,7 @@
 //!
 //! # Examples
 //!
-//! A box with a simple, centered title at the top: \
+//! A box with a simple, centered title at the top:
 //! ```
 //! use term_box::*; // All code from this module is re-exported through the term_box module
 //! 
@@ -25,7 +25,8 @@
 //! assert_eq!(ex.into_string(), output.trim());
 //! ```
 //!
-//! A more stylishly-titled box: \
+//! A more stylishly-titled box:
+//!
 //! ```
 //! use term_box::*;
 //!
@@ -52,7 +53,7 @@ use super::{CountedString, DEFAULT_DIST_FROM_CORNER, TermBox};
 
 pub use cons::Title;
 
-/// Represents the horizontal position of a title within the border of the [TermBox](super::TermBox).
+/// Represents the horizontal position of a title within the border of the [TermBox].
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub enum TitlePosition {
     /// Tries to position the title in the center of the box's top/bottom border.
@@ -167,7 +168,7 @@ fn center_pad_len(width: usize, total_len: usize, parity_diff_mod: usize) -> usi
     res
 }
 
-/// The titles for a [TermBox](super::TermBox). Each [Title] is placed
+/// The titles for a [TermBox]. Each [struct@Title] is placed
 /// independently.
 ///
 /// A term box may have up to two titles: one at the top, one at the bottom.
@@ -194,7 +195,11 @@ impl Titles {
 mod cons {
     use super::*;
 
-    /// Constructs a new [Title](super::Title).
+    /// Constructs a new [Title](struct@super::Title).
+    ///
+    /// The passed text can be any type that implements [ToString], so any [Display](std::fmt::Display) type can
+    /// be passed, including basic [strs](str) and [Strings](String). If the output of the `to_string()` call
+    /// contains a newline or tab character, formatting issues will occur.
     #[allow(non_snake_case)]
     pub fn Title(text: impl ToString, pos: TitlePosition) -> Title {
         Title {

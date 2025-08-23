@@ -1,3 +1,6 @@
+/*! Defines the [BorderStyle] and related [BorderShape] type for describing
+ * the look of a box's border. */
+
 use super::AnsiStyle;
 
 #[repr(usize)]
@@ -18,14 +21,19 @@ impl BorderChar {
 /// Defines the shape of a [TermBox's](super::TermBox) border.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum BorderShape {
-    /// Use a single line for the border: \
-    /// ┌─┐ \
-    /// └─┘
+    /** Use a single line for the border: \
+    * ┌─┐ \
+    * └─┘ \
+    * Gaps displayed in documentation will not appear in most terminals, font-dependent.
+    */
     #[default]
     Single,
-    /// Use a double line for the border: \
-    /// ╔═╗ \
-    /// ╚═╝
+
+    /** Use a double line for the border: \
+    * ╔═╗ \
+    * ╚═╝ \
+    * Gaps displayed in documentation will not appear in most terminals, font-dependent.
+    */
     Double
 }
 
@@ -44,7 +52,7 @@ impl BorderShape {
 }
 
 /// Style for a [TermBox's](super::TermBox) border, determing the [shape](BorderStyle::shape)
-/// and [style](BorderStyle::style) of the border.
+/// and [style](BorderStyle::ansi_style) of the border.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct BorderStyle {
     pub(super) shape: BorderShape,
@@ -52,19 +60,17 @@ pub struct BorderStyle {
 }
 
 impl BorderStyle {
-    /// Creates a new [BorderStyle] with [BorderShape::Single]
-    /// and no ANSI styling.
+    /// Creates a new [BorderStyle] with [BorderShape::Single] and no ANSI styling.
     pub fn new_single() -> Self { Self::default() }
 
-    /// Creates a new [BorderStyle] with [BorderShape::Double]
-    /// and no ANSI styling.
+    /// Creates a new [BorderStyle] with [BorderShape::Double] and no ANSI styling.
     pub fn new_double() -> Self {
         Self { shape: BorderShape::Double, ansi: AnsiStyle::default() }
     }
 
-    /// Sets the [AnsiStyle] for the border and returns it.
-    ///
-    /// Styling may not appear properly outside of a terminal.
+    /** Sets the [AnsiStyle] for the border and returns it. \
+    * Styling may not appear properly outside of a terminal.
+    */
     pub fn with_style(mut self, style: impl Into<AnsiStyle>) -> Self {
         self.ansi = style.into();
         self
