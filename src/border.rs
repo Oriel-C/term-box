@@ -22,18 +22,18 @@ impl BorderChar {
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum BorderShape {
     /** Use a single line for the border: \
-    * ┌─┐ \
-    * └─┘ \
-    * Gaps displayed in documentation will not appear in most terminals, font-dependent.
-    */
+      * ┌─┐ \
+      * └─┘ \
+      * Gaps displayed in documentation will not appear in most terminals, font-dependent.
+      */
     #[default]
     Single,
 
     /** Use a double line for the border: \
-    * ╔═╗ \
-    * ╚═╝ \
-    * Gaps displayed in documentation will not appear in most terminals, font-dependent.
-    */
+      * ╔═╗ \
+      * ╚═╝ \
+      * Gaps displayed in documentation will not appear in most terminals, font-dependent.
+      */
     Double
 }
 
@@ -69,8 +69,8 @@ impl BorderStyle {
     }
 
     /** Sets the [AnsiStyle] for the border and returns it. \
-    * Styling may not appear properly outside of a terminal.
-    */
+      * Styling may not appear properly outside of a terminal.
+      */
     pub fn with_style(mut self, style: impl Into<AnsiStyle>) -> Self {
         self.ansi = style.into();
         self

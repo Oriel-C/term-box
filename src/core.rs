@@ -1,9 +1,9 @@
-use std::{fmt, cmp, io};
-use super::*;
-
 mod format;
 
 pub(crate) use format::DEFAULT_DIST_FROM_CORNER;
+
+use std::{fmt, cmp, io};
+use super::*;
 
 /// Represents text in a box that can be displayed in a terminal or other output.
 ///

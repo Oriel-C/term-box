@@ -1,4 +1,7 @@
-use std::{borrow::{Borrow, Cow}, cmp};
+//! [Line] type and the [lines] macro.
+
+use std::cmp;
+use std::borrow::{Borrow, Cow};
 use ansi_width::ansi_width;
 
 /// Creates a vector of [Lines](Line) for a [TermBox](super::TermBox).
@@ -37,6 +40,8 @@ macro_rules! lines {
         vec![ $($lines.to_string()),* ]
     };
 }
+
+pub use lines;
 
 /// A line of text in a [TermBox](super::TermBox).
 ///
@@ -87,5 +92,3 @@ impl CountedString<'static> {
         Self::counted(string, width)
     }
 }
-
-
