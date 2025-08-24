@@ -24,6 +24,24 @@ impl TermBox {
     pub(crate) const SIDES: usize = 2;
     const MIN_LINE_LEN: usize = 3;
 
+    /// Creates a new [TermBox] that is a copy of this box with the lines replaced by the passed
+    /// `lines`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use term_box::{lines, TermBox};
+    ///
+    /// let lines = lines![ "hello", "world!" ];
+    /// let pithy_b = TermBox::default().with_lines(lines.clone());
+    /// let verbose = TermBox { lines: lines.clone(), ..TermBox::default() }; 
+    ///
+    /// assert_eq!(pithy_b, verbose)
+    /// ```
+    pub fn with_lines(self, lines: Vec<Line>) -> Self {
+        Self { lines, ..self }
+    }
+
     /// Appends an additional line to the box's contents.
     ///
     /// # Examples
@@ -33,12 +51,12 @@ impl TermBox {
     /// const WORLD: &str = "world!";
     ///
     /// let mut lines = lines![ "hello" ];
-    /// let mut append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
+    /// let mut append_box = TermBox::default().with_lines(lines.clone());
     ///
     /// lines.push(Line::from(WORLD));
     /// append_box.append(WORLD);
     ///
-    /// let push_box = TermBox { lines, ..TermBox::default() };
+    /// let push_box = TermBox::default().with_lines(lines);
     /// assert_eq!(append_box, push_box);
     /// ```
     pub fn append(&mut self, line: impl ToString) {
@@ -54,11 +72,11 @@ impl TermBox {
     /// const WORLD: &str = "world!";
     ///
     /// let mut lines = lines![ "hello" ];
-    /// let append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
+    /// let append_box = TermBox::default().with_lines(lines.clone());
     ///
     /// lines.push(Line::from(WORLD));
     ///
-    /// let push_box = TermBox { lines, ..TermBox::default() };
+    /// let push_box = TermBox::default().with_lines(lines);
     /// assert_eq!(append_box.append_with(WORLD), push_box);
     /// ```
     pub fn append_with(mut self, line: impl ToString) -> Self {
@@ -90,11 +108,12 @@ impl TermBox {
     ///
     /// # Examples
     ///
+    /// Print the box to stderr:
+    ///
     /// ```
     /// use term_box::TermBox;
     ///
     /// let box_ = TermBox::default();
-    /// // Print the box to stderr:
     /// box_.print_to(&mut std::io::stderr()).expect("could not print box to stderr")
     /// ```
     pub fn print_to<T: io::Write>(self, write: &mut T) -> io::Result<()> {
