@@ -87,3 +87,9 @@ impl BorderStyle {
     /// Returns the [AnsiStyle] for the border.
     pub fn ansi_style(&self) -> AnsiStyle { self.ansi }
 }
+
+impl From<BorderShape> for BorderStyle {
+    fn from(shape: BorderShape) -> Self {
+        Self { shape, ansi: AnsiStyle::default() }
+    }
+}

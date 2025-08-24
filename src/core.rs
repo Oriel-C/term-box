@@ -17,7 +17,7 @@ pub struct TermBox {
     /// [Titles] for the box.
     pub titles: Titles,
     /// Lines of text to display in the box.
-    pub lines: Vec<String>
+    pub lines: Vec<Line>
 }
 
 impl TermBox {
@@ -29,13 +29,14 @@ impl TermBox {
     /// # Examples
     ///
     /// ```
-    /// use term_box::{lines, TermBox};
+    /// use term_box::{lines, Line, TermBox};
+    /// const WORLD: &str = "world!";
     ///
     /// let mut lines = lines![ "hello" ];
     /// let mut append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
     ///
-    /// lines.push(String::from("world!"));
-    /// append_box.append("world!");
+    /// lines.push(Line::from(WORLD));
+    /// append_box.append(WORLD);
     ///
     /// let push_box = TermBox { lines, ..TermBox::default() };
     /// assert_eq!(append_box, push_box);
@@ -49,15 +50,16 @@ impl TermBox {
     /// # Examples
     ///
     /// ```
-    /// use term_box::{lines, TermBox};
+    /// use term_box::{lines, Line, TermBox};
+    /// const WORLD: &str = "world!";
     ///
     /// let mut lines = lines![ "hello" ];
     /// let append_box = TermBox { lines: lines.clone(), ..TermBox::default() };
     ///
-    /// lines.push(String::from("world!"));
+    /// lines.push(Line::from(WORLD));
     ///
     /// let push_box = TermBox { lines, ..TermBox::default() };
-    /// assert_eq!(append_box.append_with("world!"), push_box);
+    /// assert_eq!(append_box.append_with(WORLD), push_box);
     /// ```
     pub fn append_with(mut self, line: impl ToString) -> Self {
         self.append(line);
@@ -116,16 +118,15 @@ impl TermBox {
         let _ = self.print_to(&mut io::stdout());
     }
 
-    /// Converts the box to a [String].
+    /// Converts the box to a [String] for display in the terminal.
     pub fn into_string(self) -> String {
         let mut lines = Vec::with_capacity(self.lines.len());
         let mut longest_line: &CountedString = cmp::max(&self.titles.top.text, &self.titles.bottom.text);
-        if let Some(longest_idx) = self.count_and_find_longest(&mut lines) {
+        if let Some(longest_idx) = self.map_to_counts_and_find_longest(&mut lines) {
             longest_line = cmp::max(longest_line, &lines[longest_idx]);
         }
 
         let line_len = cmp::max(Self::MIN_LINE_LEN, format::line_len(longest_line, self.padding.count()));
-
         let mut buf = String::with_capacity((lines.len() + 2) * line_len);
 
         format::make_top_line(&mut buf, &self, line_len);
@@ -141,7 +142,7 @@ impl TermBox {
         buf
     }
 
-    fn count_and_find_longest<'a>(&'a self, lines: &mut Vec<CountedString<'a>>) -> Option<usize> {
+    fn map_to_counts_and_find_longest<'a>(&'a self, lines: &mut Vec<CountedString<'a>>) -> Option<usize> {
         let mut max_idx = None;
 
         for (idx, line) in self.lines.iter().map(CountedString::new).enumerate() {

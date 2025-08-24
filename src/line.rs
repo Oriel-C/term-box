@@ -1,7 +1,7 @@
 use std::{borrow::{Borrow, Cow}, cmp};
 use ansi_width::ansi_width;
 
-/// Creates a vector of lines for a [TermBox](super::TermBox).
+/// Creates a vector of [Lines](Line) for a [TermBox](super::TermBox).
 ///
 /// All arguments must implement [ToString] or otherwise have a `to_string` method.
 /// 
@@ -37,6 +37,13 @@ macro_rules! lines {
         vec![ $($lines.to_string()),* ]
     };
 }
+
+/// A line of text in a [TermBox](super::TermBox).
+///
+/// Currently, this is just an alias for a [String]. However,
+/// it may change to be a unique struct in the future. Care will be taken
+/// to not break (most) old code ([Line::new] and [Line::from] should still work).
+pub type Line = String;
 
 #[derive(PartialEq, Eq, Debug, Clone, Default)]
 pub(crate) struct CountedString<'a> {

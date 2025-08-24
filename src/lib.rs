@@ -18,7 +18,7 @@
 //! use term_box::*;
 //!
 //! let my_box = TermBox {
-//!     border_style: BorderStyle::new_single(),
+//!     border_style: BorderShape::Single.into(),
 //!     padding: Padding::ONE_SPACE,
 //!     titles: Titles::none(),
 //!     lines: lines![
@@ -85,6 +85,7 @@ pub use {
     nu_ansi_term::{Color, Style as AnsiStyle},
     border::{BorderShape, BorderStyle},
     title::{Title, Titles, TitlePosition},
+    line::Line,
     padding::Padding,
     core::*
 };
