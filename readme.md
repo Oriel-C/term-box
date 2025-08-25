@@ -10,7 +10,7 @@ use term_box::TermBox;
 TermBox::default().print()
 ```
 
-Output:
+Output (a good font will fix the issue with gaps):
 
 ```
 ┌─┐
