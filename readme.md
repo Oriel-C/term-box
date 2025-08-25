@@ -11,8 +11,11 @@ TermBox::default().print()
 ```
 
 Output:
+
+```
 ┌─┐
 └─┘
+```
 
 
 Create a simple box:
@@ -36,11 +39,13 @@ my_box.print()
 
 Output:
 
+```
 ┌──────┐
 │ my   │
 │ cool │
 │ box  │
 └──────┘
+```
 
 Print a styled box showing the current time since the unix epoch:
 
@@ -74,6 +79,7 @@ time_box.print()
 
 Output (minus coloring):
 
+```
 ╔═════════════════Time since unix epoch═════════════════╗
 ║                                                       ║
 ║  In seconds: 1756144695                               ║
@@ -83,6 +89,7 @@ Output (minus coloring):
 ║  More styled text to show another way                 ║
 ║                                                       ║
 ╚═══════════════════════════════════════════════════════╝
+```
 
 Full color output for this example can be found in the sources at test-inputs/time-example.txt.
 Use 'cat' or a similar command in a terminal to view it properly.
