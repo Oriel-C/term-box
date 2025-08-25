@@ -234,3 +234,31 @@ fn titles_center_2() {
     // init_template!(&box_, "titles-center-2");
     assert_matches_template!(box_, "titles-center-2");
 }
+
+#[test]
+fn time_example() {
+    use nu_ansi_term::Color;
+    use std::time::SystemTime;
+
+    let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+
+    let time_box = TermBox {
+        border_style: BorderStyle::new_double().with_style(Color::Cyan),
+        padding: Padding::spaces(2),
+        titles: Titles {
+            top: Title("Time since unix epoch", TitlePosition::Centered),
+            bottom: Title::empty(),
+        },
+        lines: lines![
+            "",
+            format!("In seconds: {}", time.as_secs()),
+            format!("In milliseconds: {}", time.as_millis()),
+            format!("in nanoseconds: {}", time.as_nanos()),
+            Color::Blue.bold().paint("Irrelevant styled text to show that you can do this"),
+            AnsiStyle::new().italic().paint("More styled text to show another way"),
+            ""
+        ]
+    }.into_string();
+
+    init_template!(time_box, "time-example");
+}
